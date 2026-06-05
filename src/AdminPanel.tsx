@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   CreditCard,
   DollarSign,
+  Eye,
+  EyeOff,
   FileText,
   Gavel,
   History,
@@ -218,21 +220,41 @@ export default function AdminPanel() {
 }
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="bt-login-page">
       <section className="bt-login-card">
-        <TuxedoLogo className="bt-login-logo" />
-        <p>Premium Chauffeur Service</p>
-        <h1>Admin Management Console</h1>
-        <span>Manage rides, KYC, pricing, payments, disputes, notifications, and audit logging from one control center.</span>
-        <label>
-          Email
-          <input defaultValue="admin@tuxedo.com" />
-        </label>
-        <label>
-          Password
-          <input defaultValue="password" type="password" />
-        </label>
+        <div className="bt-login-brand">
+          <TuxedoLogo className="bt-login-logo" />
+          <p>Premium Chauffeur Service</p>
+        </div>
+
+        <div className="bt-login-heading">
+          <h1>Admin Login</h1>
+        </div>
+
+        <div className="bt-login-form">
+          <label className="bt-login-field">
+            <span>Email</span>
+            <input defaultValue="admin@tuxedo.com" />
+          </label>
+          <label className="bt-login-field">
+            <span>Password</span>
+            <div className="bt-password-control">
+              <input defaultValue="admin@123" type={showPassword ? 'text' : 'password'} />
+              <button
+                type="button"
+                className="bt-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </label>
+        </div>
+
         <button className="bt-primary-btn" onClick={onLogin}>
           Sign in to admin <ChevronRight size={18} />
         </button>
