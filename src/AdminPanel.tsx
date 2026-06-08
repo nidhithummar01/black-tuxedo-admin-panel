@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType } from 'react';
+import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpen,
   Building2,
+  CalendarClock,
   Car,
   CheckCircle2,
   ChevronRight,
@@ -23,8 +24,9 @@ import {
   Menu,
   MessageSquare,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
+  UserCheck,
   Users,
   X,
 } from 'lucide-react';
@@ -58,10 +60,10 @@ const navItems: Array<{ id: Page; label: string; icon: IconType }> = [
 ];
 
 const metrics = [
-  { title: 'Active rides', value: '31', detail: 'pending, accepted, arrived, in progress', icon: Activity, tone: 'gold' },
-  { title: 'KYC pending', value: '12', detail: '4 need admin review today', icon: ClipboardCheck, tone: 'warn' },
-  { title: 'Revenue today', value: '$8,420', detail: 'fare, company billing, invoices', icon: DollarSign, tone: 'green' },
-  { title: 'Open disputes', value: '7', detail: '3 under review', icon: Gavel, tone: 'red' },
+  { title: 'Active rides', value: '31', detail: 'pending, accepted, arrived, in progress', icon: Activity, tone: 'gold' as const },
+  { title: 'KYC pending', value: '12', detail: '4 need admin review today', icon: ClipboardCheck, tone: 'warn' as const },
+  { title: 'Revenue today', value: '$8,420', detail: 'fare, company billing, invoices', icon: DollarSign, tone: 'green' as const },
+  { title: 'Open disputes', value: '7', detail: '3 under review', icon: Gavel, tone: 'red' as const },
 ];
 
 const rides = [
@@ -128,6 +130,34 @@ const securityRules = [
   'Sensitive payment data must not be stored in mobile apps.',
 ];
 
+const metricToneStyles = {
+  gold: 'border-tux-gold/25 from-tux-gold/10 to-transparent [&_.metric-icon]:bg-tux-gold/15 [&_.metric-icon]:text-tux-gold [&_em]:text-tux-gold',
+  warn: 'border-amber-500/25 from-amber-500/10 to-transparent [&_.metric-icon]:bg-amber-500/15 [&_.metric-icon]:text-amber-400 [&_em]:text-amber-400',
+  green: 'border-emerald-500/25 from-emerald-500/10 to-transparent [&_.metric-icon]:bg-emerald-500/15 [&_.metric-icon]:text-emerald-400 [&_em]:text-emerald-400',
+  red: 'border-rose-500/25 from-rose-500/10 to-transparent [&_.metric-icon]:bg-rose-500/15 [&_.metric-icon]:text-rose-400 [&_em]:text-rose-400',
+};
+
+const statusStyles: Record<string, string> = {
+  active: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/25',
+  online: 'bg-sky-500/12 text-sky-300 border-sky-500/25',
+  pending: 'bg-amber-500/12 text-amber-300 border-amber-500/25',
+  accepted: 'bg-sky-500/12 text-sky-300 border-sky-500/25',
+  'in-progress': 'bg-violet-500/12 text-violet-300 border-violet-500/25',
+  scheduled: 'bg-indigo-500/12 text-indigo-300 border-indigo-500/25',
+  approved: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/25',
+  rejected: 'bg-rose-500/12 text-rose-300 border-rose-500/25',
+  paid: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/25',
+  invoice: 'bg-violet-500/12 text-violet-300 border-violet-500/25',
+  manual: 'bg-zinc-500/12 text-zinc-300 border-zinc-500/25',
+  open: 'bg-amber-500/12 text-amber-300 border-amber-500/25',
+  'under-review': 'bg-orange-500/12 text-orange-300 border-orange-500/25',
+  resolved: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/25',
+};
+
+function cn(...classes: Array<string | false | undefined>) {
+  return classes.filter(Boolean).join(' ');
+}
+
 function TuxedoLogo({ className }: { className: string }) {
   return <img src={`${import.meta.env.BASE_URL}tuxedo-logo-white.png`} alt="Tuxedo" className={className} draggable={false} />;
 }
@@ -142,78 +172,133 @@ export default function AdminPanel() {
   if (!isAuthed) return <LoginScreen onLogin={() => setIsAuthed(true)} />;
 
   return (
-    <div className="bt-shell">
-      <aside className={`bt-sidebar ${sidebarOpen ? 'bt-sidebar-open' : ''}`}>
-        <div className="bt-brand-row">
+    <div className="min-h-screen bg-tux-black font-sans text-tux-cream lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar overlay"
+        />
+      )}
+
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r border-white/8 bg-tux-surface/95 px-4 py-5 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="mb-6 flex items-start justify-between gap-3">
           <div>
-            <TuxedoLogo className="bt-brand-logo" />
-            <span>Admin Control Center</span>
+            <TuxedoLogo className="h-auto w-[118px] select-none object-contain" />
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Admin Control Center</p>
           </div>
-          <button className="bt-icon-btn bt-mobile-only" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          >
             <X size={18} />
           </button>
         </div>
 
-        <nav className="bt-nav">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              className={`bt-nav-item ${activePage === id ? 'bt-nav-active' : ''}`}
-              onClick={() => {
-                setActivePage(id);
-                setSidebarOpen(false);
-              }}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-            </button>
-          ))}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
+          {navItems.map(({ id, label, icon: Icon }) => {
+            const isActive = activePage === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                className={cn(
+                  'flex min-h-[42px] items-center gap-3 rounded-xl px-3 text-left text-[13px] font-semibold transition',
+                  isActive
+                    ? 'border border-tux-gold/25 bg-tux-gold/10 text-tux-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+                    : 'border border-transparent text-white/55 hover:bg-white/5 hover:text-white/85',
+                )}
+                onClick={() => {
+                  setActivePage(id);
+                  setSidebarOpen(false);
+                }}
+              >
+                <Icon size={17} className={isActive ? 'text-tux-gold' : 'text-white/45'} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </nav>
-
-        <div className="bt-sidebar-status">
-          <ShieldCheck size={18} />
-          <div>
-            <strong>Controls enabled</strong>
-            <span>RBAC · audit · validation</span>
-          </div>
-        </div>
       </aside>
 
-      <main className="bt-main">
-        <header className="bt-topbar">
-          <button className="bt-icon-btn bt-mobile-only" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-            <Menu size={20} />
-          </button>
-          <div>
-            <p className="bt-eyebrow">Black Tuxedo Platform</p>
-            <h1>{pageTitle}</h1>
-          </div>
-          <div className="bt-top-actions">
-            <div className="bt-search">
-              <Search size={15} />
-              <span>Search rides, users, invoices, audit logs</span>
+      <main className="min-w-0">
+        <header className="sticky top-0 z-30 border-b border-white/8 bg-tux-black/80 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/75 transition hover:bg-white/10 lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-tux-gold/80">Black Tuxedo Platform</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-tux-cream sm:text-[28px]">{pageTitle}</h1>
+              <p className="mt-1 hidden max-w-2xl text-sm text-white/50 sm:block">
+                Executive operations console for rides, access, billing, and platform control.
+              </p>
             </div>
-            <button className="bt-icon-btn" aria-label="Notifications">
-              <Bell size={17} />
-            </button>
-            <button className="bt-logout" onClick={() => setIsAuthed(false)}>
-              <LogOut size={15} />
-              Logout
-            </button>
+
+            <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+              <div className="hidden min-w-[260px] items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white/40 xl:flex">
+                <Search size={15} className="shrink-0 text-white/35" />
+                <span>Search rides, users, invoices, audit logs</span>
+              </div>
+
+              <button
+                type="button"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10"
+                aria-label="Notifications"
+              >
+                <Bell size={17} />
+                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-tux-gold ring-2 ring-tux-black" />
+              </button>
+
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-tux-gold-light to-tux-gold text-xs font-bold text-black">
+                  AO
+                </span>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-semibold text-tux-cream">Admin Owner</p>
+                  <p className="text-xs text-white/45">Super admin</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-white/70 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300"
+                onClick={() => setIsAuthed(false)}
+              >
+                <LogOut size={15} />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </header>
 
-        {activePage === 'dashboard' && <Dashboard />}
-        {activePage === 'users' && <UsersPage />}
-        {activePage === 'rides' && <RidesPage />}
-        {activePage === 'kyc' && <KycPage />}
-        {activePage === 'pricing' && <PricingPage />}
-        {activePage === 'payments' && <PaymentsPage />}
-        {activePage === 'concierge' && <ConciergePage />}
-        {activePage === 'notifications' && <NotificationsPage />}
-        {activePage === 'disputes' && <DisputesPage />}
-        {activePage === 'audit' && <AuditPage />}
-        {activePage === 'security' && <SecurityPage />}
+        <div className="px-4 py-6 sm:px-6 lg:px-8">
+          {activePage === 'dashboard' && <Dashboard />}
+          {activePage === 'users' && <UsersPage />}
+          {activePage === 'rides' && <RidesPage />}
+          {activePage === 'kyc' && <KycPage />}
+          {activePage === 'pricing' && <PricingPage />}
+          {activePage === 'payments' && <PaymentsPage />}
+          {activePage === 'concierge' && <ConciergePage />}
+          {activePage === 'notifications' && <NotificationsPage />}
+          {activePage === 'disputes' && <DisputesPage />}
+          {activePage === 'audit' && <AuditPage />}
+          {activePage === 'security' && <SecurityPage />}
+        </div>
       </main>
     </div>
   );
@@ -223,29 +308,40 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="bt-login-page">
-      <section className="bt-login-card">
-        <div className="bt-login-brand">
-          <TuxedoLogo className="bt-login-logo" />
-          <p>Premium Chauffeur Service</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-tux-black px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(216,183,93,0.12),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.04),transparent_30%)]" />
+
+      <section className="relative w-full max-w-[440px] rounded-[24px] border border-white/10 bg-tux-surface/90 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="mb-8 text-center">
+          <TuxedoLogo className="mx-auto h-auto w-[200px] select-none object-contain" />
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">Premium Chauffeur Service</p>
         </div>
 
-        <div className="bt-login-heading">
-          <h1>Admin Login</h1>
+        <div className="mb-6">
+          <h1 className="text-center text-2xl font-bold tracking-tight text-tux-cream">Admin Login</h1>
+          <p className="mt-2 text-center text-sm text-white/50">Sign in to manage platform operations securely.</p>
         </div>
 
-        <div className="bt-login-form">
-          <label className="bt-login-field">
-            <span>Email</span>
-            <input defaultValue="admin@tuxedo.com" />
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-white/50">Email</span>
+            <input
+              defaultValue="admin@tuxedo.com"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-tux-cream outline-none transition placeholder:text-white/30 focus:border-tux-gold/40 focus:ring-4 focus:ring-tux-gold/10"
+            />
           </label>
-          <label className="bt-login-field">
-            <span>Password</span>
-            <div className="bt-password-control">
-              <input defaultValue="admin@123" type={showPassword ? 'text' : 'password'} />
+
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-white/50">Password</span>
+            <div className="relative">
+              <input
+                defaultValue="admin@123"
+                type={showPassword ? 'text' : 'password'}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-sm text-tux-cream outline-none transition focus:border-tux-gold/40 focus:ring-4 focus:ring-tux-gold/10"
+              />
               <button
                 type="button"
-                className="bt-password-toggle"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-white/45 transition hover:bg-white/10 hover:text-white/80"
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -255,8 +351,13 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           </label>
         </div>
 
-        <button className="bt-primary-btn" onClick={onLogin}>
-          Sign in to admin <ChevronRight size={18} />
+        <button
+          type="button"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-tux-gold-light to-tux-gold px-4 py-3.5 text-sm font-bold text-black shadow-[0_10px_30px_rgba(216,183,93,0.25)] transition hover:brightness-105"
+          onClick={onLogin}
+        >
+          Sign in to admin
+          <ChevronRight size={18} />
         </button>
       </section>
     </div>
@@ -265,14 +366,46 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
 function Dashboard() {
   return (
-    <div className="bt-page">
-      <div className="bt-metrics">
-        {metrics.map((metric) => <Metric key={metric.title} {...metric} />)}
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <section className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-tux-surface-2 via-tux-surface to-tux-black p-6 shadow-[0_16px_48px_rgba(0,0,0,0.35)] xl:col-span-3 xl:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(216,183,93,0.14),transparent_38%)]" />
+        <div className="relative grid gap-6 lg:grid-cols-[1.4fr_0.8fr] lg:items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-tux-gold/25 bg-tux-gold/10 px-3 py-1 text-xs font-semibold text-tux-gold">
+              <Sparkles size={14} />
+              Premium admin workspace
+            </span>
+            <h2 className="mt-4 max-w-3xl text-2xl font-bold leading-tight tracking-tight text-tux-cream sm:text-3xl">
+              Command every ride, account, and payment from one refined control center.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55 sm:text-[15px]">
+              Monitor live chauffeur operations, approve sensitive actions, and keep the Black Tuxedo platform audit-ready.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm text-white/50">
+              <CalendarClock size={18} className="text-tux-gold" />
+              <span>Next priority</span>
+            </div>
+            <p className="mt-3 text-lg font-bold text-tux-cream">Driver KYC review</p>
+            <p className="mt-2 text-sm leading-relaxed text-white/50">4 documents require admin decision before drivers can go online.</p>
+            <button type="button" className="mt-4 inline-flex items-center rounded-lg border border-tux-gold/30 bg-tux-gold/10 px-3.5 py-2 text-sm font-semibold text-tux-gold transition hover:bg-tux-gold/15">
+              Open queue
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:col-span-3 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <Metric key={metric.title} {...metric} />
+        ))}
       </div>
 
-      <section className="bt-panel bt-span-2">
+      <section className="rounded-[20px] border border-white/10 bg-tux-surface/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-sm xl:col-span-2">
         <PanelTitle icon={BookOpen} title="Platform Controls" subtitle="Core operational checks for rides, pricing, access, and admin activity." />
-        <div className="bt-rule-grid">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <RuleCard title="Ride assignment" detail="Server lock prevents duplicate driver acceptance." status="Backend controlled" />
           <RuleCard title="Fare authority" detail="Estimated and final fare must be calculated server-side." status="Pricing module" />
           <RuleCard title="Access control" detail="Each role can access only allowed screens and actions." status="RBAC" />
@@ -280,9 +413,9 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="bt-panel">
+      <section className="rounded-[20px] border border-white/10 bg-tux-surface/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-sm">
         <PanelTitle icon={AlertTriangle} title="Admin Attention" subtitle="Items needing review before operations continue." />
-        <div className="bt-attention-list">
+        <div className="mt-5 space-y-3">
           <AttentionRow title="Driver KYC pending" meta="12 documents waiting" tone="warn" />
           <AttentionRow title="Payment failures" meta="3 failed transactions" tone="red" />
           <AttentionRow title="No driver found" meta="2 expired requests" tone="warn" />
@@ -290,7 +423,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="bt-panel bt-span-3">
+      <section className="rounded-[20px] border border-white/10 bg-tux-surface/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-sm xl:col-span-3">
         <PanelTitle icon={Car} title="Live Ride Control" subtitle="Admin can monitor ride status, assignment, cancellation, payment, and invoice state." />
         <RideTable />
       </section>
@@ -300,14 +433,13 @@ function Dashboard() {
 
 function UsersPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={Users} title="Users & Role Access" subtitle="Passenger, Driver, Concierge, and Admin users with role-scoped permissions." />
+    <PageGrid>
+      <Panel span={3} icon={Users} title="Users & Role Access" subtitle="Passenger, Driver, Concierge, and Admin users with role-scoped permissions.">
         <DataTable
           columns={['Name', 'Role', 'Status', 'Access scope', 'Last action']}
           rows={users.map((user) => [user.name, user.role, <StatusPill key={user.name} value={user.status} />, user.scope, user.lastAction])}
         />
-      </section>
+      </Panel>
       <RuleList
         title="Role Access Controls"
         rules={[
@@ -317,17 +449,16 @@ function UsersPage() {
           'Admin can block/unblock users only with a saved reason and audit log.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function RidesPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={Car} title="Ride Booking & Matching" subtitle="Track ride lifecycle from pending to completed, cancelled, expired, or no_driver_found." />
+    <PageGrid>
+      <Panel span={3} icon={Car} title="Ride Booking & Matching" subtitle="Track ride lifecycle from pending to completed, cancelled, expired, or no_driver_found.">
         <RideTable />
-      </section>
+      </Panel>
       <RuleList
         title="Allowed Status Flow"
         rules={[
@@ -346,20 +477,25 @@ function RidesPage() {
           'Backend must lock assignment so two drivers are never assigned to one ride.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function KycPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={ClipboardCheck} title="Driver KYC Review" subtitle="Approve, reject, and request re-upload with rejection reason." />
+    <PageGrid>
+      <Panel span={3} icon={ClipboardCheck} title="Driver KYC Review" subtitle="Approve, reject, and request re-upload with rejection reason.">
         <DataTable
           columns={['Driver', 'Document', 'Status', 'Age', 'Admin action']}
-          rows={kycQueue.map((item) => [item.driver, item.document, <StatusPill key={item.driver} value={item.status} />, item.age, <button key={item.action} className="bt-mini-btn">{item.action}</button>])}
+          rows={kycQueue.map((item) => [
+            item.driver,
+            item.document,
+            <StatusPill key={item.driver} value={item.status} />,
+            item.age,
+            <MiniButton key={item.action}>{item.action}</MiniButton>,
+          ])}
         />
-      </section>
+      </Panel>
       <RuleList
         title="KYC Requirements"
         rules={[
@@ -369,20 +505,16 @@ function KycPage() {
           'Driver must re-upload correct documents after rejection.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function PricingPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={SlidersHorizontal} title="Pricing & Commission" subtitle="Admin-controlled fare components and platform commission." />
-        <DataTable
-          columns={['Component', 'Current value', 'Control']}
-          rows={pricingRules.map((rule) => [rule.name, rule.value, rule.rule])}
-        />
-      </section>
+    <PageGrid>
+      <Panel span={3} icon={SlidersHorizontal} title="Pricing & Commission" subtitle="Admin-controlled fare components and platform commission.">
+        <DataTable columns={['Component', 'Current value', 'Control']} rows={pricingRules.map((rule) => [rule.name, rule.value, rule.rule])} />
+      </Panel>
       <RuleList
         title="Fare Calculation"
         rules={[
@@ -393,20 +525,25 @@ function PricingPage() {
           'Any admin fare adjustment must be audit logged.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function PaymentsPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={CreditCard} title="Payments, Invoices & Payouts" subtitle="Ride-linked payments, company billing, refunds, and driver payout state." />
+    <PageGrid>
+      <Panel span={3} icon={CreditCard} title="Payments, Invoices & Payouts" subtitle="Ride-linked payments, company billing, refunds, and driver payout state.">
         <DataTable
           columns={['Ride', 'Payer', 'Status', 'Method', 'Amount']}
-          rows={payments.map((payment) => [payment.ride, payment.payer, <StatusPill key={payment.ride} value={payment.status} />, payment.method, payment.amount])}
+          rows={payments.map((payment) => [
+            payment.ride,
+            payment.payer,
+            <StatusPill key={payment.ride} value={payment.status} />,
+            payment.method,
+            payment.amount,
+          ])}
         />
-      </section>
+      </Panel>
       <RuleList
         title="Payment Controls"
         rules={[
@@ -417,15 +554,19 @@ function PaymentsPage() {
           'Driver payout happens only after completed and paid ride unless company billing allows delay.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function ConciergePage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={Building2} title="Concierge Account Control" subtitle="Hotel/company guest rides, guest links, tracking, cancellation, and billing responsibility." />
+    <PageGrid>
+      <Panel
+        span={3}
+        icon={Building2}
+        title="Concierge Account Control"
+        subtitle="Hotel/company guest rides, guest links, tracking, cancellation, and billing responsibility."
+      >
         <DataTable
           columns={['Account', 'Requests today', 'Pending', 'Billing mode', 'Access scope']}
           rows={[
@@ -434,7 +575,7 @@ function ConciergePage() {
             ['Four Seasons', '9', '1', 'Admin/manual billing', 'Own hotel rides only'],
           ]}
         />
-      </section>
+      </Panel>
       <RuleList
         title="Concierge Controls"
         rules={[
@@ -445,20 +586,16 @@ function ConciergePage() {
           'Payment responsibility must be saved with the ride.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function NotificationsPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={MessageSquare} title="Notification Center" subtitle="Real-time ride, payment, KYC, reminder, and guest tracking notifications." />
-        <DataTable
-          columns={['Event', 'Channels', 'Rule']}
-          rows={notifications.map((item) => [item.event, item.channels, item.rule])}
-        />
-      </section>
+    <PageGrid>
+      <Panel span={3} icon={MessageSquare} title="Notification Center" subtitle="Real-time ride, payment, KYC, reminder, and guest tracking notifications.">
+        <DataTable columns={['Event', 'Channels', 'Rule']} rows={notifications.map((item) => [item.event, item.channels, item.rule])} />
+      </Panel>
       <RuleList
         title="Notification Requirements"
         rules={[
@@ -468,20 +605,19 @@ function NotificationsPage() {
           'Notification failures should be logged.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function DisputesPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={Gavel} title="Disputes & Complaints" subtitle="Ride-linked complaints from passenger, driver, or concierge." />
+    <PageGrid>
+      <Panel span={3} icon={Gavel} title="Disputes & Complaints" subtitle="Ride-linked complaints from passenger, driver, or concierge.">
         <DataTable
           columns={['Ride', 'Opened by', 'Status', 'Issue']}
           rows={disputes.map((item) => [item.ride, item.openedBy, <StatusPill key={item.ride} value={item.status} />, item.issue])}
         />
-      </section>
+      </Panel>
       <RuleList
         title="Dispute Workflow"
         rules={[
@@ -490,27 +626,26 @@ function DisputesPage() {
           'Admin resolution should be saved with notes.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
 function AuditPage() {
   return (
-    <div className="bt-page">
-      <section className="bt-panel bt-span-3">
-        <PanelTitle icon={History} title="Audit Log" subtitle="Every business-critical action stores actor, role, target, old/new value, timestamp, and reason." />
+    <PageGrid>
+      <Panel span={3} icon={History} title="Audit Log" subtitle="Every business-critical action stores actor, role, target, old/new value, timestamp, and reason.">
         <DataTable
           columns={['Action', 'Actor', 'Role', 'Target', 'Time', 'Reason']}
           rows={auditLogs.map((log) => [log.action, log.actor, log.role, log.target, log.time, log.reason])}
         />
-      </section>
-    </div>
+      </Panel>
+    </PageGrid>
   );
 }
 
 function SecurityPage() {
   return (
-    <div className="bt-page">
+    <PageGrid>
       <RuleList title="Security & Validation" rules={securityRules} />
       <RuleList
         title="Final Platform Authority"
@@ -521,28 +656,61 @@ function SecurityPage() {
           'Every business-critical action should have validation, permission check, and logging.',
         ]}
       />
-    </div>
+    </PageGrid>
   );
 }
 
-function Metric({ title, value, detail, icon: Icon, tone }: { title: string; value: string; detail: string; icon: IconType; tone: string }) {
+function PageGrid({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">{children}</div>;
+}
+
+function Panel({
+  icon,
+  title,
+  subtitle,
+  span = 1,
+  children,
+}: {
+  icon: IconType;
+  title: string;
+  subtitle: string;
+  span?: 1 | 2 | 3;
+  children: ReactNode;
+}) {
+  const spanClass = span === 3 ? 'xl:col-span-3' : span === 2 ? 'xl:col-span-2' : '';
   return (
-    <div className={`bt-metric bt-tone-${tone}`}>
-      <div className="bt-metric-icon"><Icon size={18} /></div>
-      <span>{title}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
+    <section className={cn('rounded-[20px] border border-white/10 bg-tux-surface/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-sm', spanClass)}>
+      <PanelTitle icon={icon} title={title} subtitle={subtitle} />
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+function Metric({ title, value, detail, icon: Icon, tone }: { title: string; value: string; detail: string; icon: IconType; tone: keyof typeof metricToneStyles }) {
+  return (
+    <div className={cn('rounded-[20px] border bg-gradient-to-br p-5 shadow-[0_8px_28px_rgba(0,0,0,0.24)]', metricToneStyles[tone])}>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="metric-icon flex h-10 w-10 items-center justify-center rounded-xl">
+          <Icon size={18} />
+        </div>
+        <em className="text-[11px] font-semibold not-italic uppercase tracking-[0.14em]">Live</em>
+      </div>
+      <p className="text-sm text-white/55">{title}</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-tux-cream">{value}</p>
+      <p className="mt-2 text-xs leading-relaxed text-white/45">{detail}</p>
     </div>
   );
 }
 
 function PanelTitle({ icon: Icon, title, subtitle }: { icon: IconType; title: string; subtitle: string }) {
   return (
-    <div className="bt-panel-title">
-      <div className="bt-panel-icon"><Icon size={18} /></div>
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-tux-gold/20 bg-tux-gold/10 text-tux-gold">
+        <Icon size={18} />
+      </div>
       <div>
-        <h2>{title}</h2>
-        <p>{subtitle}</p>
+        <h2 className="text-lg font-bold tracking-tight text-tux-cream">{title}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-white/50">{subtitle}</p>
       </div>
     </div>
   );
@@ -553,28 +721,46 @@ function RideTable() {
     <DataTable
       columns={['Ride', 'Rider / Guest', 'Vehicle', 'Status', 'Payment', 'Owner']}
       rows={rides.map((ride) => [
-        <strong key={ride.id}>{ride.id}</strong>,
-        <span key={ride.rider}>{ride.rider}<small>{ride.role}</small></span>,
+        <strong key={ride.id} className="font-semibold text-tux-cream">
+          {ride.id}
+        </strong>,
+        <span key={ride.rider} className="block">
+          {ride.rider}
+          <small className="mt-0.5 block text-xs text-white/45">{ride.role}</small>
+        </span>,
         ride.vehicle,
         <StatusPill key={ride.status} value={ride.status} />,
-        <span key={ride.payment}>{ride.fare}<small>{ride.payment}</small></span>,
+        <span key={ride.payment} className="block">
+          {ride.fare}
+          <small className="mt-0.5 block text-xs text-white/45">{ride.payment}</small>
+        </span>,
         ride.owner,
       ])}
     />
   );
 }
 
-function DataTable({ columns, rows }: { columns: string[]; rows: Array<Array<React.ReactNode>> }) {
+function DataTable({ columns, rows }: { columns: string[]; rows: Array<Array<ReactNode>> }) {
   return (
-    <div className="bt-table-wrap">
-      <table className="bt-table">
+    <div className="overflow-x-auto rounded-xl border border-white/8">
+      <table className="min-w-full border-collapse text-left text-sm">
         <thead>
-          <tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr>
+          <tr className="border-b border-white/8 bg-white/[0.03]">
+            {columns.map((column) => (
+              <th key={column} className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white/45">
+                {column}
+              </th>
+            ))}
+          </tr>
         </thead>
         <tbody>
           {rows.map((row, index) => (
-            <tr key={index}>
-              {row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}
+            <tr key={index} className="border-b border-white/5 transition last:border-0 hover:bg-white/[0.02]">
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex} className="px-4 py-3.5 align-middle text-white/75">
+                  {cell}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -585,38 +771,40 @@ function DataTable({ columns, rows }: { columns: string[]; rows: Array<Array<Rea
 
 function RuleList({ title, rules }: { title: string; rules: string[] }) {
   return (
-    <section className="bt-panel bt-span-3">
-      <PanelTitle icon={FileText} title={title} subtitle="Controls this admin module must enforce or monitor." />
-      <div className="bt-rule-list">
+    <Panel span={3} icon={FileText} title={title} subtitle="Controls this admin module must enforce or monitor.">
+      <div className="space-y-2.5">
         {rules.map((rule) => (
-          <div className="bt-rule-row" key={rule}>
-            <CheckCircle2 size={16} />
-            <span>{rule}</span>
+          <div key={rule} className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
+            <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-tux-gold" />
+            <span className="text-sm leading-relaxed text-white/70">{rule}</span>
           </div>
         ))}
       </div>
-    </section>
+    </Panel>
   );
 }
 
 function RuleCard({ title, detail, status }: { title: string; detail: string; status: string }) {
   return (
-    <div className="bt-rule-card">
-      <strong>{title}</strong>
-      <span>{detail}</span>
-      <em>{status}</em>
+    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+      <UserCheck size={17} className="text-tux-gold" />
+      <p className="mt-3 text-sm font-semibold text-tux-cream">{title}</p>
+      <p className="mt-1 text-sm leading-relaxed text-white/50">{detail}</p>
+      <em className="mt-3 block text-[11px] font-semibold not-italic uppercase tracking-[0.12em] text-tux-gold/80">{status}</em>
     </div>
   );
 }
 
 function AttentionRow({ title, meta, tone }: { title: string; meta: string; tone: 'warn' | 'red' }) {
   const Icon = tone === 'red' ? Ban : AlertTriangle;
+  const toneClass = tone === 'red' ? 'border-rose-500/20 bg-rose-500/8 text-rose-300' : 'border-amber-500/20 bg-amber-500/8 text-amber-300';
+
   return (
-    <div className={`bt-attention-row bt-attention-${tone}`}>
-      <Icon size={16} />
+    <div className={cn('flex items-start gap-3 rounded-xl border px-4 py-3', toneClass)}>
+      <Icon size={16} className="mt-0.5 shrink-0" />
       <div>
-        <strong>{title}</strong>
-        <span>{meta}</span>
+        <p className="text-sm font-semibold text-tux-cream">{title}</p>
+        <p className="mt-0.5 text-xs text-white/50">{meta}</p>
       </div>
     </div>
   );
@@ -624,5 +812,25 @@ function AttentionRow({ title, meta, tone }: { title: string; meta: string; tone
 
 function StatusPill({ value }: { value: string }) {
   const normalized = value.toLowerCase().replace(/\s|_/g, '-');
-  return <span className={`bt-status bt-status-${normalized}`}>{value.replace(/_/g, ' ')}</span>;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize',
+        statusStyles[normalized] ?? 'border-white/15 bg-white/8 text-white/70',
+      )}
+    >
+      {value.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function MiniButton({ children }: { children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center rounded-lg border border-tux-gold/30 bg-tux-gold/10 px-3 py-1.5 text-xs font-semibold text-tux-gold transition hover:bg-tux-gold/15"
+    >
+      {children}
+    </button>
+  );
 }
