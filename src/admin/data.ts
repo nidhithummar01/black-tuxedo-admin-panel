@@ -37,14 +37,14 @@ export const metrics = [
 ];
 
 export const rides = [
-  { id: 'TX-1048', rider: 'Ivan Garcia', role: 'Passenger', vehicle: 'Luxury SUV · 7 passengers', status: 'pending', fare: '$124', payment: 'pending', owner: 'Passenger app' },
+  { id: 'TX-1048', rider: 'Priya Shah', role: 'Passenger', vehicle: 'Luxury SUV · 7 passengers', status: 'pending', fare: '$124', payment: 'pending', owner: 'Passenger app' },
   { id: 'TX-1047', rider: 'Amelia Stone', role: 'Concierge guest', vehicle: 'Executive Sprinter · 8 passengers', status: 'accepted', fare: '$340', payment: 'company invoice', owner: 'Soho House' },
   { id: 'TX-1046', rider: 'Marcus Lee', role: 'Passenger', vehicle: 'Sedan · 4 passengers', status: 'in_progress', fare: '$88', payment: 'paid', owner: 'Passenger app' },
   { id: 'TX-1045', rider: 'Priya Shah', role: 'Concierge guest', vehicle: 'Hourly · Stretch / Limo', status: 'scheduled', fare: '$690 est.', payment: 'manual billing', owner: 'Four Seasons' },
 ];
 
 export const users = [
-  { name: 'Ivan Garcia', role: 'Passenger', status: 'active', scope: 'Passenger app', lastAction: 'Booked SUV ride' },
+  { name: 'Priya Shah', role: 'Passenger', status: 'active', scope: 'Passenger app', lastAction: 'Booked SUV ride' },
   { name: 'Michael Thompson', role: 'Driver', status: 'online', scope: 'KYC approved', lastAction: 'Accepted TX-1047' },
   { name: 'The Plaza Desk', role: 'Concierge', status: 'active', scope: 'The Plaza Hotel only', lastAction: 'Sent guest link' },
   { name: 'Admin Owner', role: 'Admin', status: 'active', scope: 'Full access', lastAction: 'Adjusted pricing' },
