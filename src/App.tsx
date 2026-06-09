@@ -30,7 +30,7 @@ const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard }>
 ];
 
 const rides = [
-  { id: 'TX-1048', guest: 'Ivan Garcia', pickup: 'The Plaza Hotel', type: 'SUV · 7 passengers', status: 'Awaiting guest', amount: '$124', time: 'Now' },
+  { id: 'TX-1048', guest: 'Priya Shah', pickup: 'The Plaza Hotel', type: 'SUV · 7 passengers', status: 'Awaiting guest', amount: '$124', time: 'Now' },
   { id: 'TX-1047', guest: 'Amelia Stone', pickup: 'Soho House', type: 'Sprinter · Executive · 8 passengers', status: 'Assigned', amount: '$340', time: '06:30 PM' },
   { id: 'TX-1046', guest: 'Marcus Lee', pickup: 'One Hotel South Beach', type: 'Sedan · 4 passengers', status: 'In progress', amount: '$88', time: '05:45 PM' },
   { id: 'TX-1045', guest: 'Priya Shah', pickup: 'Four Seasons', type: 'Hourly · 5h · Stretch / Limo', status: 'Scheduled', amount: '$690', time: 'Tomorrow' },
