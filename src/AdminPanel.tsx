@@ -188,14 +188,14 @@ export default function AdminPanel() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="mb-6 flex items-start justify-between gap-3">
-          <div>
-            <TuxedoLogo className="h-auto w-[118px] select-none object-contain" />
+        <div className="relative mb-6 flex justify-center">
+          <div className="flex flex-col items-center text-center">
+            <TuxedoLogo className="h-auto w-[132px] select-none object-contain" />
             <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Admin Control Center</p>
           </div>
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 lg:hidden"
+            className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-label="Close menu"
           >
@@ -242,7 +242,6 @@ export default function AdminPanel() {
             </button>
 
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-tux-gold/80">Black Tuxedo Platform</p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-tux-cream sm:text-[28px]">{pageTitle}</h1>
               <p className="mt-1 hidden max-w-2xl text-sm text-white/50 sm:block">
                 Executive operations console for rides, access, billing, and platform control.
